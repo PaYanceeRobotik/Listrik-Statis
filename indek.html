@@ -1,0 +1,1458 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hukum Coulomb - Media Pembelajaran Interaktif</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0fdf4; /* Light green background */
+            color: #1f2937;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .nav-btn.active {
+            background-color: #10b981; /* Emerald 500 */
+            color: white;
+            transform: scale(1.05);
+        }
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .flip-card:hover {
+            transform: translateY(-8px);
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efek memantul (bouncy) */
+            transform-style: preserve-3d;
+            border-radius: 1rem;
+        }
+        .flip-card.flipped {
+            z-index: 10;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg) scale(1.05); /* Membesar dan mendekat ke layar */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+        .flip-card-front {
+            background: linear-gradient(135deg, #34d399, #10b981);
+            color: white;
+        }
+        .flip-card-back {
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+            transform: rotateY(180deg);
+        }
+        
+        .draggable {
+            cursor: grab;
+        }
+        .draggable:active {
+            cursor: grabbing;
+        }
+        .dropzone.drag-over {
+            background-color: #d1fae5;
+            border-color: #10b981;
+        }
+        
+        /* Simulation Canvas */
+        #simCanvas {
+            width: 100%;
+            max-width: 800px;
+            height: 400px;
+            background-color: #f8fafc;
+            border-radius: 0.5rem;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .watermark {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 0.8rem;
+            color: rgba(0, 0, 0, 0.3);
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .celebration, .sadness {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10rem;
+            z-index: 50;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+        
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+        .floating-emoji {
+            position: absolute;
+            animation: floatUp 2s ease-out forwards;
+            font-size: 2rem;
+            pointer-events: none;
+        }
+
+        @keyframes skyFlash {
+            0%, 88%, 96%, 100% { background-color: #0f172a; } /* Malam/Gelap */
+            90%, 94% { background-color: #334155; } /* Mendung Terang */
+            92% { background-color: #f8fafc; } /* Kilat Putih */
+        }
+        @keyframes boltStrike {
+            0%, 88%, 96%, 100% { opacity: 0; transform: scale(0.9) translateY(-10px); }
+            90%, 94% { opacity: 0.8; transform: scale(1) translateY(0); filter: drop-shadow(0 0 10px rgba(250, 204, 21, 0.6)); }
+            92% { opacity: 1; transform: scale(1.1) translateY(5px); filter: drop-shadow(0 0 40px rgba(255, 255, 255, 1)); }
+        }
+        @keyframes cloudDrift {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(20px); }
+            100% { transform: translateX(0); }
+        }
+        .anim-sky {
+            animation: skyFlash 5s infinite;
+        }
+        .anim-bolt {
+            animation: boltStrike 5s infinite;
+        }
+        .anim-cloud {
+            animation: cloudDrift 10s ease-in-out infinite;
+        }
+
+        /* --- Animasi Interaksi Muatan Baru --- */
+        @keyframes repel-left {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-15px); }
+        }
+        @keyframes repel-right {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(15px); }
+        }
+        @keyframes attract-left {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(25px); }
+        }
+        @keyframes attract-right {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-25px); }
+        }
+        .charge-plus {
+            background: radial-gradient(circle at 30% 30%, #fca5a5, #ef4444);
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.8), inset -3px -3px 6px rgba(0,0,0,0.2);
+        }
+        .charge-minus {
+            background: radial-gradient(circle at 30% 30%, #93c5fd, #3b82f6);
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.8), inset -3px -3px 6px rgba(0,0,0,0.2);
+        }
+        .anim-repel-l { animation: repel-left 2.5s ease-in-out infinite; }
+        .anim-repel-r { animation: repel-right 2.5s ease-in-out infinite; }
+        .anim-attract-l { animation: attract-left 2s ease-in-out infinite; }
+        .anim-attract-r { animation: attract-right 2s ease-in-out infinite; }
+
+    </style>
+</head>
+<body class="min-h-screen flex flex-col relative overflow-x-hidden">
+
+    <!-- Watermark -->
+    <div class="watermark font-bold">@yanceesudarsono</div>
+
+    <nav class="bg-white shadow-md sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4">
+            <div class="flex justify-between items-center py-4 overflow-x-auto no-scrollbar">
+                <div class="text-xl font-bold text-emerald-600 flex-shrink-0 mr-4">
+                    <i class="fas fa-bolt text-yellow-500 mr-2"></i>MPI IPA Kls 9
+                </div>
+                <div class="flex space-x-2 md:space-x-4 min-w-max">
+                    <button onclick="showSection('apersepsi')" id="nav-apersepsi" class="nav-btn active px-4 py-2 rounded-full text-sm font-semibold text-gray-600 hover:bg-emerald-100 transition duration-300">Apersepsi</button>
+                    <button onclick="showSection('materi')" id="nav-materi" class="nav-btn px-4 py-2 rounded-full text-sm font-semibold text-gray-600 hover:bg-emerald-100 transition duration-300">Materi</button>
+                    <button onclick="showSection('simulasi')" id="nav-simulasi" class="nav-btn px-4 py-2 rounded-full text-sm font-semibold text-gray-600 hover:bg-emerald-100 transition duration-300">Simulasi</button>
+                    <button onclick="showSection('kuis')" id="nav-kuis" class="nav-btn px-4 py-2 rounded-full text-sm font-semibold text-gray-600 hover:bg-emerald-100 transition duration-300">Kuis</button>
+                    <button onclick="showSection('kesimpulan')" id="nav-kesimpulan" class="nav-btn px-4 py-2 rounded-full text-sm font-semibold text-gray-600 hover:bg-emerald-100 transition duration-300">Kesimpulan</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-5xl">
+        
+        <!-- SECTION: APERSEPSI -->
+        <section id="sec-apersepsi" class="content-section animate-[fadeIn_0.5s_ease-in-out]">
+            <div class="glass-panel rounded-2xl p-8 text-center mb-8">
+                <h1 class="text-4xl font-bold text-emerald-700 mb-6">Selamat Datang di Dunia Listrik Statis!</h1>
+                
+                <div class="flex flex-col md:flex-row items-center justify-center gap-8 mb-8">
+                    <div class="w-full md:w-1/2">
+                        <div class="anim-sky relative w-full h-64 md:h-80 rounded-2xl shadow-xl overflow-hidden border-4 border-slate-800 flex items-center justify-center group cursor-pointer transition-transform hover:scale-[1.02]">
+                            <!-- Background Clouds (CSS layered) -->
+                            <div class="anim-cloud absolute -top-10 -left-10 w-48 h-48 bg-slate-700/80 rounded-full blur-2xl"></div>
+                            <div class="anim-cloud absolute top-10 -right-10 w-56 h-56 bg-slate-800/90 rounded-full blur-2xl" style="animation-delay: -2s;"></div>
+                            <div class="absolute bottom-0 w-full h-1/3 bg-gradient-to-t from-slate-900 to-transparent z-10"></div>
+                            
+                            <!-- Lightning Bolt SVG -->
+                            <svg class="anim-bolt relative z-20 w-24 h-40 md:w-32 md:h-56 text-yellow-400 drop-shadow-2xl" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" stroke="white" stroke-width="0.5"></polygon>
+                            </svg>
+
+                            <!-- Mini Label -->
+                            <div class="absolute bottom-3 right-3 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/20 text-xs font-medium text-white/90 z-30 flex items-center shadow-lg">
+                                <i class="fas fa-bolt text-yellow-400 mr-2 animate-pulse"></i> Animasi Petir
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-1/2 text-left space-y-4 text-lg text-gray-700">
+                        <p>Pernahkah kamu melihat kilatan petir di langit saat hujan turun lebat? Atau, pernahkah kamu merasakan rambutmu berdiri setelah melepas baju hangat di ruangan ber-AC?</p>
+                        <p>Fenomena-fenomena menakjubkan ini bukanlah sihir, melainkan peristiwa alam yang bisa dijelaskan dengan ilmu Fisika, khususnya <strong>Listrik Statis</strong>.</p>
+                        <p class="font-semibold text-emerald-600">Mari kita jelajahi rahasia di balik interaksi muatan-muatan tak kasat mata ini!</p>
+                    </div>
+                </div>
+
+                <div class="mt-16">
+                    <div class="inline-block bg-emerald-100 text-emerald-800 px-4 py-1 rounded-full text-sm font-bold mb-3"><i class="fas fa-flag-checkered mr-2"></i>Target Kita</div>
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-2">Tujuan Pembelajaran Hari Ini</h2>
+                    <p class="text-gray-500 mb-8">Ketuk setiap kartu misi di bawah ini untuk membuka target belajar yang harus kamu kuasai!</p>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-4xl mx-auto">
+                        
+                        <!-- Misi 1 -->
+                        <div class="flip-card w-full h-40 group" onclick="unlockMission(this)">
+                            <div class="flip-card-inner rounded-2xl border-2 border-emerald-200">
+                                <div class="flip-card-front flex flex-col relative bg-gradient-to-br from-emerald-400 to-emerald-600 overflow-hidden">
+                                    <div class="absolute -top-6 -right-6 w-20 h-20 bg-white/20 rounded-full blur-xl"></div>
+                                    <div class="absolute -bottom-6 -left-6 w-20 h-20 bg-black/10 rounded-full blur-xl"></div>
+                                    <i class="fas fa-atom text-5xl mb-2 opacity-90 text-white drop-shadow-md group-hover:scale-110 transition-transform duration-300"></i>
+                                    <h3 class="font-bold text-xl tracking-wide text-white drop-shadow-sm">Misi 1</h3>
+                                    <i class="tap-icon fas fa-hand-pointer absolute top-4 right-4 text-yellow-300 text-xl animate-bounce drop-shadow-md"></i>
+                                </div>
+                                <div class="flip-card-back flex flex-col items-center justify-center p-5 text-center bg-gradient-to-br from-white to-emerald-50 relative overflow-hidden">
+                                    <i class="fas fa-check-circle text-emerald-500 text-6xl absolute -right-2 -bottom-2 opacity-10"></i>
+                                    <p class="font-bold text-sm md:text-base leading-relaxed text-emerald-900 z-10">Menjelaskan sifat-sifat muatan listrik penyusun sebuah benda.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Misi 2 -->
+                        <div class="flip-card w-full h-40 group" onclick="unlockMission(this)">
+                            <div class="flip-card-inner rounded-2xl border-2 border-blue-200">
+                                <div class="flip-card-front flex flex-col relative bg-gradient-to-br from-blue-400 to-blue-600 overflow-hidden">
+                                    <div class="absolute -top-6 -right-6 w-20 h-20 bg-white/20 rounded-full blur-xl"></div>
+                                    <i class="fas fa-magnet text-5xl mb-2 opacity-90 text-white drop-shadow-md group-hover:scale-110 transition-transform duration-300"></i>
+                                    <h3 class="font-bold text-xl tracking-wide text-white drop-shadow-sm">Misi 2</h3>
+                                    <i class="tap-icon fas fa-hand-pointer absolute top-4 right-4 text-yellow-300 text-xl animate-bounce drop-shadow-md" style="animation-delay: 0.2s"></i>
+                                </div>
+                                <div class="flip-card-back flex flex-col items-center justify-center p-5 text-center bg-gradient-to-br from-white to-blue-50 relative overflow-hidden">
+                                    <i class="fas fa-check-circle text-blue-500 text-6xl absolute -right-2 -bottom-2 opacity-10"></i>
+                                    <p class="font-bold text-sm md:text-base leading-relaxed text-blue-900 z-10">Menganalisis interaksi (tarik-menarik atau tolak-menolak) antara dua muatan listrik.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Misi 3 -->
+                        <div class="flip-card w-full h-40 group" onclick="unlockMission(this)">
+                            <div class="flip-card-inner rounded-2xl border-2 border-violet-200">
+                                <div class="flip-card-front flex flex-col relative bg-gradient-to-br from-violet-400 to-violet-600 overflow-hidden">
+                                    <div class="absolute -top-6 -right-6 w-20 h-20 bg-white/20 rounded-full blur-xl"></div>
+                                    <i class="fas fa-square-root-alt text-5xl mb-2 opacity-90 text-white drop-shadow-md group-hover:scale-110 transition-transform duration-300"></i>
+                                    <h3 class="font-bold text-xl tracking-wide text-white drop-shadow-sm">Misi 3</h3>
+                                    <i class="tap-icon fas fa-hand-pointer absolute top-4 right-4 text-yellow-300 text-xl animate-bounce drop-shadow-md" style="animation-delay: 0.4s"></i>
+                                </div>
+                                <div class="flip-card-back flex flex-col items-center justify-center p-5 text-center bg-gradient-to-br from-white to-violet-50 relative overflow-hidden">
+                                    <i class="fas fa-check-circle text-violet-500 text-6xl absolute -right-2 -bottom-2 opacity-10"></i>
+                                    <p class="font-bold text-sm md:text-base leading-relaxed text-violet-900 z-10">Memahami rumusan dan konsep matematis dari Hukum Coulomb.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Misi 4 -->
+                        <div class="flip-card w-full h-40 group" onclick="unlockMission(this)">
+                            <div class="flip-card-inner rounded-2xl border-2 border-rose-200">
+                                <div class="flip-card-front flex flex-col relative bg-gradient-to-br from-rose-400 to-rose-600 overflow-hidden">
+                                    <div class="absolute -top-6 -right-6 w-20 h-20 bg-white/20 rounded-full blur-xl"></div>
+                                    <i class="fas fa-sliders-h text-5xl mb-2 opacity-90 text-white drop-shadow-md group-hover:scale-110 transition-transform duration-300"></i>
+                                    <h3 class="font-bold text-xl tracking-wide text-white drop-shadow-sm">Misi 4</h3>
+                                    <i class="tap-icon fas fa-hand-pointer absolute top-4 right-4 text-yellow-300 text-xl animate-bounce drop-shadow-md" style="animation-delay: 0.6s"></i>
+                                </div>
+                                <div class="flip-card-back flex flex-col items-center justify-center p-5 text-center bg-gradient-to-br from-white to-rose-50 relative overflow-hidden">
+                                    <i class="fas fa-check-circle text-rose-500 text-6xl absolute -right-2 -bottom-2 opacity-10"></i>
+                                    <p class="font-bold text-sm md:text-base leading-relaxed text-rose-900 z-10">Menganalisis faktor (muatan & jarak) yang mempengaruhi besarnya Gaya Coulomb.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: MATERI -->
+        <section id="sec-materi" class="content-section hidden animate-[fadeIn_0.5s_ease-in-out]">
+            <div class="glass-panel rounded-2xl p-8 mb-8">
+                <h2 class="text-3xl font-bold text-emerald-700 mb-6 border-b-2 border-emerald-200 pb-2">1. Sifat-sifat Muatan Listrik</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-700 text-lg mb-8">
+                    <div>
+                        <p class="mb-4">Benda di sekitar kita tersusun atas atom. Atom memiliki inti yang terdiri dari proton (positif) dan neutron (netral), dikelilingi oleh elektron (negatif).</p>
+                        <p>Sebuah benda dikatakan:</p>
+                        <ul class="list-disc pl-6 space-y-2 mt-2 font-semibold">
+                            <li class="text-red-600">Bermuatan Positif (+) jika kekurangan elektron.</li>
+                            <li class="text-blue-600">Bermuatan Negatif (-) jika kelebihan elektron.</li>
+                            <li class="text-gray-500">Netral jika jumlah proton = elektron.</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Panel Animasi Interaksi Muatan -->
+                    <div class="bg-slate-800 p-6 rounded-2xl shadow-lg border-2 border-emerald-500 flex flex-col items-center justify-center relative overflow-hidden">
+                        <!-- Latar belakang teknologi/listrik -->
+                        <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-emerald-500 via-transparent to-transparent pointer-events-none"></div>
+                        <h3 class="font-bold text-xl mb-6 text-center text-white z-10 flex items-center gap-2">
+                            <i class="fas fa-bolt text-yellow-400"></i> Interaksi Antar Muatan
+                        </h3>
+                        
+                        <!-- Animasi Tolak Menolak (+ dan +) -->
+                        <div class="flex flex-col md:flex-row items-center justify-between w-full p-3 bg-slate-900/50 rounded-xl mb-4 group hover:bg-slate-900/70 transition">
+                            <div class="flex items-center justify-center flex-grow py-2">
+                                <div class="w-12 h-12 rounded-full charge-plus flex items-center justify-center text-white text-2xl font-bold anim-repel-l z-10">+</div>
+                                <div class="w-16 md:w-20 flex justify-center items-center opacity-70 z-0">
+                                    <i class="fas fa-chevron-left text-red-400 animate-pulse"></i>
+                                    <div class="w-6 md:w-8 border-t-2 border-dashed border-red-400 mx-1"></div>
+                                    <i class="fas fa-chevron-right text-red-400 animate-pulse"></i>
+                                </div>
+                                <div class="w-12 h-12 rounded-full charge-plus flex items-center justify-center text-white text-2xl font-bold anim-repel-r z-10">+</div>
+                            </div>
+                            <div class="mt-2 md:mt-0 md:min-w-[120px] text-center md:text-right">
+                                <span class="font-bold text-red-400 bg-red-900/30 px-3 py-1 rounded-full text-xs md:text-sm border border-red-500/30 shadow-inner tracking-wide">Tolak Menolak</span>
+                            </div>
+                        </div>
+
+                        <!-- Animasi Tolak Menolak (- dan -) -->
+                        <div class="flex flex-col md:flex-row items-center justify-between w-full p-3 bg-slate-900/50 rounded-xl mb-4 group hover:bg-slate-900/70 transition">
+                            <div class="flex items-center justify-center flex-grow py-2">
+                                <div class="w-12 h-12 rounded-full charge-minus flex items-center justify-center text-white text-2xl font-bold anim-repel-l z-10">-</div>
+                                <div class="w-16 md:w-20 flex justify-center items-center opacity-70 z-0">
+                                    <i class="fas fa-chevron-left text-blue-400 animate-pulse"></i>
+                                    <div class="w-6 md:w-8 border-t-2 border-dashed border-blue-400 mx-1"></div>
+                                    <i class="fas fa-chevron-right text-blue-400 animate-pulse"></i>
+                                </div>
+                                <div class="w-12 h-12 rounded-full charge-minus flex items-center justify-center text-white text-2xl font-bold anim-repel-r z-10">-</div>
+                            </div>
+                            <div class="mt-2 md:mt-0 md:min-w-[120px] text-center md:text-right">
+                                <span class="font-bold text-blue-400 bg-blue-900/30 px-3 py-1 rounded-full text-xs md:text-sm border border-blue-500/30 shadow-inner tracking-wide">Tolak Menolak</span>
+                            </div>
+                        </div>
+
+                        <!-- Animasi Tarik Menarik (+ dan -) -->
+                        <div class="flex flex-col md:flex-row items-center justify-between w-full p-3 bg-slate-900/50 rounded-xl group hover:bg-slate-900/70 transition">
+                            <div class="flex items-center justify-center flex-grow py-2">
+                                <div class="w-12 h-12 rounded-full charge-plus flex items-center justify-center text-white text-2xl font-bold anim-attract-l z-10">+</div>
+                                <div class="w-16 md:w-20 flex justify-center items-center opacity-90 z-0 relative">
+                                    <div class="absolute inset-0 bg-emerald-400/20 blur-md rounded-full"></div>
+                                    <i class="fas fa-chevron-right text-emerald-400 animate-pulse"></i>
+                                    <div class="w-6 md:w-8 border-t-2 border-emerald-400 mx-1 shadow-[0_0_8px_#34d399]"></div>
+                                    <i class="fas fa-chevron-left text-emerald-400 animate-pulse"></i>
+                                </div>
+                                <div class="w-12 h-12 rounded-full charge-minus flex items-center justify-center text-white text-2xl font-bold anim-attract-r z-10">-</div>
+                            </div>
+                            <div class="mt-2 md:mt-0 md:min-w-[120px] text-center md:text-right">
+                                <span class="font-bold text-emerald-400 bg-emerald-900/30 px-3 py-1 rounded-full text-xs md:text-sm border border-emerald-500/30 shadow-inner tracking-wide">Tarik Menarik</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h2 class="text-3xl font-bold text-emerald-700 mb-6 border-b-2 border-emerald-200 pb-2">2. Hukum Coulomb</h2>
+                <div class="bg-emerald-50 p-6 rounded-xl border border-emerald-200 mb-8">
+                    <p class="text-xl text-center italic font-semibold text-emerald-900 mb-4">
+                        "Besar gaya tarik-menarik atau tolak-menolak antara dua benda bermuatan listrik berbanding lurus dengan hasil kali kedua muatan itu dan berbanding terbalik dengan kuadrat jarak antara kedua muatan tersebut."
+                    </p>
+                    <p class="text-center text-gray-600">- Charles-Augustin de Coulomb -</p>
+                </div>
+
+                <!-- Rumus Interaktif Pintar -->
+                <div class="mb-10 bg-slate-900 rounded-2xl shadow-xl overflow-hidden border-2 border-emerald-500/50 relative group">
+                    <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-5"></div>
+                    <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-emerald-500 to-transparent"></div>
+                    
+                    <div class="p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center relative z-10">
+                        
+                        <!-- Papan Rumus -->
+                        <div class="w-full md:w-1/2 flex flex-col items-center justify-center">
+                            <h3 class="text-emerald-400 text-sm font-bold tracking-widest uppercase mb-4 flex items-center gap-2">
+                                <i class="fas fa-hand-pointer animate-bounce"></i> Ketuk Variabel Rumus
+                            </h3>
+                            
+                            <div class="text-4xl md:text-5xl font-serif text-white flex items-center bg-slate-800/80 px-8 py-6 rounded-xl border border-slate-700 shadow-[inset_0_0_20px_rgba(0,0,0,0.5)]">
+                                <span class="text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]">F</span>
+                                <span class="mx-3 text-slate-400">=</span>
+                                <span class="text-slate-300">k</span>
+                                <span class="mx-2 text-slate-400">&middot;</span>
+                                <div class="flex flex-col items-center">
+                                    <!-- Tombol Q -->
+                                    <button onclick="showFormulaInfo('q')" id="btn-var-q" class="border-b-2 border-slate-400 pb-1 px-2 transition-all duration-300 hover:text-emerald-400 hover:scale-110 focus:outline-none focus:text-emerald-400 focus:drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]">
+                                        |q<sub>1</sub> &middot; q<sub>2</sub>|
+                                    </button>
+                                    <!-- Tombol R -->
+                                    <button onclick="showFormulaInfo('r')" id="btn-var-r" class="pt-1 px-2 transition-all duration-300 hover:text-rose-400 hover:scale-110 focus:outline-none focus:text-rose-400 focus:drop-shadow-[0_0_10px_rgba(251,113,133,0.8)]">
+                                        r<sup>2</sup>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <ul class="text-sm text-slate-400 mt-6 grid grid-cols-2 gap-x-4 gap-y-2">
+                                <li><strong class="text-yellow-400">F</strong> = Gaya Coulomb (N)</li>
+                                <li><strong class="text-white">k</strong> = Konstanta (9×10<sup>9</sup>)</li>
+                                <li><strong class="text-emerald-400">q</strong> = Besar muatan (C)</li>
+                                <li><strong class="text-rose-400">r</strong> = Jarak antar muatan (m)</li>
+                            </ul>
+                        </div>
+
+                        <!-- Layar Informasi Dinamis -->
+                        <div class="w-full md:w-1/2 h-full min-h-[220px]">
+                            <!-- State Default -->
+                            <div id="info-default" class="h-full flex flex-col items-center justify-center text-center p-6 bg-slate-800/50 rounded-xl border border-dashed border-slate-600 transition-all duration-500">
+                                <i class="fas fa-microchip text-4xl text-slate-500 mb-3 animate-pulse"></i>
+                                <p class="text-slate-300 font-medium">Analisis Variabel Nonaktif.</p>
+                                <p class="text-sm text-slate-500 mt-2">Ketuk bagian <strong class="text-emerald-400">q</strong> (muatan) atau <strong class="text-rose-400">r</strong> (jarak) pada rumus di samping untuk melihat rahasia interaksinya!</p>
+                            </div>
+
+                            <!-- State Penjelasan Q -->
+                            <div id="info-q" class="hidden h-full flex flex-col items-start justify-center p-6 bg-emerald-900/30 rounded-xl border border-emerald-500/30 shadow-[inset_0_0_30px_rgba(16,185,129,0.1)] transition-all duration-500 transform translate-y-0 opacity-100 animate-[fadeIn_0.3s_ease-out]">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                                        <i class="fas fa-plus-circle text-emerald-400 text-xl"></i>
+                                    </div>
+                                    <h4 class="text-xl font-bold text-emerald-400">Pengaruh Muatan (q)</h4>
+                                </div>
+                                <p class="text-slate-200 text-sm mb-4 leading-relaxed">
+                                    Gaya Coulomb <strong class="text-white bg-emerald-600/50 px-2 py-0.5 rounded">Berbanding Lurus</strong> dengan besar muatan. Artinya, semakin besar isi muatannya, interaksinya akan semakin kuat.
+                                </p>
+                                <div class="flex items-center gap-4 text-emerald-300 font-bold bg-slate-900/50 p-3 rounded-lg w-full justify-center">
+                                    <span class="flex items-center gap-1">Muatan <i class="fas fa-arrow-up text-emerald-400 animate-bounce"></i></span>
+                                    <i class="fas fa-arrow-right text-slate-500"></i>
+                                    <span class="flex items-center gap-1">Gaya (F) <i class="fas fa-arrow-up text-yellow-400 animate-bounce"></i></span>
+                                </div>
+                            </div>
+
+                            <!-- State Penjelasan R -->
+                            <div id="info-r" class="hidden h-full flex flex-col items-start justify-center p-6 bg-rose-900/30 rounded-xl border border-rose-500/30 shadow-[inset_0_0_30px_rgba(244,63,94,0.1)] transition-all duration-500 transform translate-y-0 opacity-100 animate-[fadeIn_0.3s_ease-out]">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <div class="w-10 h-10 rounded-full bg-rose-500/20 flex items-center justify-center">
+                                        <i class="fas fa-people-arrows text-rose-400 text-xl"></i>
+                                    </div>
+                                    <h4 class="text-xl font-bold text-rose-400">Pengaruh Jarak (r)</h4>
+                                </div>
+                                <p class="text-slate-200 text-sm mb-4 leading-relaxed">
+                                    Gaya Coulomb <strong class="text-white bg-rose-600/50 px-2 py-0.5 rounded">Berbanding Terbalik</strong> dengan kuadrat jarak. Menjauh sedikit saja, gaya akan melemah dengan sangat drastis (kuadratik)!
+                                </p>
+                                <div class="flex items-center gap-4 text-rose-300 font-bold bg-slate-900/50 p-3 rounded-lg w-full justify-center">
+                                    <span class="flex items-center gap-1">Jarak <i class="fas fa-arrow-up text-rose-400 animate-bounce"></i></span>
+                                    <i class="fas fa-arrow-right text-slate-500"></i>
+                                    <span class="flex items-center gap-1">Gaya (F) <i class="fas fa-arrow-down text-yellow-400 animate-bounce"></i></span>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mini Interactive Game in Theory -->
+                <div class="bg-blue-50 p-6 rounded-xl border border-blue-200">
+                    <h3 class="text-2xl font-bold text-blue-800 mb-4 text-center"><i class="fas fa-gamepad mr-2"></i>Mini Game: Pasangkan Muatannya!</h3>
+                    <p class="text-center text-gray-600 mb-4">Geser panah interaksi ke pasangan muatan yang tepat untuk mengingat materinya.</p>
+                    
+                    <div class="flex flex-col md:flex-row justify-around items-center gap-4">
+                        <!-- Draggables -->
+                        <div class="flex flex-col gap-4">
+                            <div class="draggable bg-emerald-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2" draggable="true" id="drag-tarik" ondragstart="drag(event)">
+                                <i class="fas fa-compress-arrows-alt"></i> Tarik Menarik
+                            </div>
+                            <div class="draggable bg-red-500 text-white font-bold py-2 px-4 rounded-lg shadow-md flex items-center gap-2" draggable="true" id="drag-tolak" ondragstart="drag(event)">
+                                <i class="fas fa-arrows-alt-h"></i> Tolak Menolak
+                            </div>
+                        </div>
+
+                        <!-- Dropzones -->
+                        <div class="flex flex-col gap-6 w-full md:w-2/3">
+                            <div class="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                                <div class="flex gap-2">
+                                    <div class="w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center font-bold">+</div>
+                                    <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">-</div>
+                                </div>
+                                <div class="dropzone w-40 h-12 border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center text-gray-400" data-answer="drag-tarik" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">Tempatkan disini</div>
+                            </div>
+                            
+                            <div class="flex items-center justify-between bg-white p-4 rounded-xl shadow-sm border border-gray-200">
+                                <div class="flex gap-2">
+                                    <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">-</div>
+                                    <div class="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold">-</div>
+                                </div>
+                                <div class="dropzone w-40 h-12 border-2 border-dashed border-gray-400 rounded-lg flex items-center justify-center text-gray-400" data-answer="drag-tolak" ondrop="drop(event)" ondragover="allowDrop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">Tempatkan disini</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="mini-game-feedback" class="text-center mt-4 font-bold hidden"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION: SIMULASI -->
+        <section id="sec-simulasi" class="content-section hidden animate-[fadeIn_0.5s_ease-in-out]">
+             <div class="glass-panel rounded-2xl p-6 md:p-8 mb-8">
+                <h2 class="text-3xl font-bold text-emerald-700 mb-2 text-center">Laboratorium Virtual Hukum Coulomb</h2>
+                <p class="text-center text-gray-600 mb-6">Ubah nilai muatan dan jarak untuk melihat bagaimana gaya Coulomb (F) berubah.</p>
+
+                <div class="relative w-full h-[300px] md:h-[400px] bg-slate-100 rounded-xl overflow-hidden shadow-inner mb-6 border-2 border-slate-200">
+                    <canvas id="simCanvas"></canvas>
+                    
+                    <!-- HUD Overlays on Canvas -->
+                    <div class="absolute top-4 left-4 bg-white/80 p-3 rounded-lg shadow backdrop-blur-sm pointer-events-none border border-gray-200">
+                        <div class="text-sm font-semibold text-gray-700 mb-1">Gaya Coulomb (F)</div>
+                        <div id="hud-force" class="text-2xl font-bold text-emerald-600">0.00 N</div>
+                        <div class="text-xs text-gray-500 mt-1">k = 9 &times; 10<sup>9</sup> Nm<sup>2</sup>/C<sup>2</sup></div>
+                        <div class="text-xs text-gray-500"><em>(Nilai disederhanakan utk simulasi)</em></div>
+                    </div>
+                    <div id="hud-interaction" class="absolute top-4 right-4 bg-white/80 px-4 py-2 rounded-full shadow font-bold text-lg pointer-events-none backdrop-blur-sm border border-gray-200">
+                        Tolak Menolak
+                    </div>
+                </div>
+
+                <!-- Simulation Controls -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-6 rounded-xl shadow-md border border-gray-100">
+                    <!-- Muatan 1 -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="font-bold text-red-600 flex items-center gap-2">
+                                <span class="w-4 h-4 rounded-full bg-red-500 inline-block"></span>
+                                Muatan 1 (q<sub>1</sub>)
+                            </label>
+                            <span id="val-q1" class="font-mono bg-red-100 text-red-800 px-2 py-1 rounded text-sm">+2 &mu;C</span>
+                        </div>
+                        <input type="range" id="slider-q1" min="-10" max="10" value="2" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-500">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>-10 &mu;C</span>
+                            <span>0</span>
+                            <span>+10 &mu;C</span>
+                        </div>
+                    </div>
+
+                    <!-- Muatan 2 -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="font-bold text-blue-600 flex items-center gap-2">
+                                <span class="w-4 h-4 rounded-full bg-blue-500 inline-block"></span>
+                                Muatan 2 (q<sub>2</sub>)
+                            </label>
+                            <span id="val-q2" class="font-mono bg-blue-100 text-blue-800 px-2 py-1 rounded text-sm">+2 &mu;C</span>
+                        </div>
+                        <input type="range" id="slider-q2" min="-10" max="10" value="2" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>-10 &mu;C</span>
+                            <span>0</span>
+                            <span>+10 &mu;C</span>
+                        </div>
+                    </div>
+
+                    <!-- Jarak -->
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="font-bold text-gray-700 flex items-center gap-2">
+                                <i class="fas fa-ruler-horizontal"></i> Jarak (r)
+                            </label>
+                            <span id="val-r" class="font-mono bg-gray-100 text-gray-800 px-2 py-1 rounded text-sm">4 cm</span>
+                        </div>
+                        <input type="range" id="slider-r" min="2" max="10" value="4" step="0.5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                        <div class="flex justify-between text-xs text-gray-400">
+                            <span>2 cm</span>
+                            <span>10 cm</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex justify-center gap-4">
+                    <button onclick="resetSimulation()" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-full font-semibold transition"><i class="fas fa-undo mr-2"></i>Reset</button>
+                    <!-- Mode toggles -->
+                    <div class="inline-flex rounded-md shadow-sm" role="group">
+                      <button type="button" onclick="setSimMode('all')" id="btn-mode-all" class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-emerald-600 rounded-l-lg hover:bg-emerald-700">Semua Bebas</button>
+                      <button type="button" onclick="setSimMode('charge_only')" id="btn-mode-charge" class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-gray-200 hover:bg-gray-100">Hanya Muatan (r Tetap)</button>
+                      <button type="button" onclick="setSimMode('dist_only')" id="btn-mode-dist" class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-200 rounded-r-md hover:bg-gray-100">Hanya Jarak (q Tetap)</button>
+                    </div>
+                </div>
+                <p id="sim-mode-desc" class="text-center text-sm text-gray-500 mt-2">Mode: Anda dapat mengubah nilai muatan dan jarak secara bebas.</p>
+
+             </div>
+        </section>
+
+        <!-- SECTION: KUIS -->
+        <section id="sec-kuis" class="content-section hidden animate-[fadeIn_0.5s_ease-in-out]">
+            <div class="glass-panel rounded-2xl p-4 md:p-8 mb-8 max-w-3xl mx-auto">
+                <div id="quiz-intro" class="text-center">
+                    <h2 class="text-3xl font-bold text-emerald-700 mb-4">Uji Pemahamanmu!</h2>
+                    <p class="text-gray-600 mb-6">Kuis ini terdiri dari 10 soal acak dari bank soal yang bervariasi (Mudah, Sedang, Sukar, HOTS). Jawab dengan teliti ya!</p>
+                    
+                    <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 text-left">
+                        <p class="font-bold text-yellow-700">Perhatian:</p>
+                        <p class="text-yellow-600 text-sm">Hasil kuis baru akan ditampilkan setelah kamu menyelesaikan semua soal. Siapkan catatan coretanmu jika perlu!</p>
+                    </div>
+
+                    <button onclick="startQuiz()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 px-8 rounded-full text-xl shadow-lg transform transition hover:scale-105"><i class="fas fa-play mr-2"></i>Mulai Kuis</button>
+                </div>
+
+                <div id="quiz-container" class="hidden">
+                    <div class="flex justify-between items-center mb-6 border-b pb-2">
+                        <span class="font-bold text-gray-500">Soal <span id="current-q-num" class="text-emerald-600">1</span> / 10</span>
+                        <div class="w-1/2 bg-gray-200 rounded-full h-2.5">
+                            <div id="quiz-progress" class="bg-emerald-600 h-2.5 rounded-full" style="width: 10%"></div>
+                        </div>
+                        <span id="q-difficulty" class="text-xs font-bold px-2 py-1 rounded bg-gray-100 text-gray-600">Mudah</span>
+                    </div>
+
+                    <div id="question-text" class="text-xl font-semibold text-gray-800 mb-6">
+                        <!-- Question goes here -->
+                    </div>
+
+                    <div id="options-container" class="space-y-3">
+                        <!-- Options go here dynamically based on type -->
+                    </div>
+
+                    <div class="mt-8 flex justify-end">
+                        <button id="next-btn" onclick="nextQuestion()" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg shadow hidden">Selanjutnya <i class="fas fa-arrow-right ml-1"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Global Feedback Elements -->
+            <div id="celebration-anim" class="celebration">🎉🥳</div>
+            <div id="sadness-anim" class="sadness">😢💔</div>
+        </section>
+
+        <!-- SECTION: KESIMPULAN & HASIL -->
+        <section id="sec-kesimpulan" class="content-section hidden animate-[fadeIn_0.5s_ease-in-out]">
+            <div class="glass-panel rounded-2xl p-6 md:p-8 mb-8 max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-emerald-700 mb-6 text-center border-b-2 border-emerald-200 pb-2">Rangkuman & Refleksi</h2>
+                
+                <div class="bg-emerald-50 p-6 rounded-xl border border-emerald-200 mb-8">
+                    <h3 class="text-xl font-bold text-emerald-800 mb-3"><i class="fas fa-book-open mr-2"></i>Kesimpulan Pembelajaran</h3>
+                    <ul class="list-disc pl-5 space-y-2 text-gray-700">
+                        <li>Muatan sejenis (positif-positif / negatif-negatif) akan saling <strong>Tolak-menolak</strong>.</li>
+                        <li>Muatan berbeda jenis (positif-negatif) akan saling <strong>Tarik-menarik</strong>.</li>
+                        <li>Menurut Hukum Coulomb, gaya listrik <strong>berbanding lurus</strong> dengan besar muatan. Artinya, semakin besar muatan, gaya semakin kuat.</li>
+                        <li>Gaya listrik <strong>berbanding terbalik</strong> dengan kuadrat jarak. Artinya, semakin jauh jaraknya, gaya akan melemah dengan sangat cepat.</li>
+                    </ul>
+                </div>
+
+                <div id="result-form-area" class="bg-white p-6 rounded-xl shadow-md border border-gray-100 mb-8">
+                    <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Data Diri & Penilaian Diri</h3>
+                    <p class="text-center text-gray-600 mb-6">Silakan isi data diri untuk melihat hasil kuis (jika sudah mengerjakan) dan mengisi lembar refleksi.</p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="student-name">Nama Lengkap</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500" id="student-name" type="text" placeholder="Masukkan nama">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="student-class">Kelas</label>
+                            <select class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-white" id="student-class">
+                                <option value="" disabled selected>Pilih Kelas</option>
+                                <option value="IX-A">IX-A</option>
+                                <option value="IX-B">IX-B</option>
+                                <option value="IX-C">IX-C</option>
+                                <option value="IX-D">IX-D</option>
+                                <option value="IX-E">IX-E</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-bold mb-2" for="student-absent">No. Absen</label>
+                            <input class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-emerald-500" id="student-absent" type="number" min="1" max="50" placeholder="No Absen">
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Bagaimana perasaanmu setelah mempelajari materi Hukum Coulomb hari ini?</label>
+                        <div class="flex justify-center gap-4">
+                            <label class="cursor-pointer">
+                                <input type="radio" name="reflection" value="sangat_paham" class="peer sr-only">
+                                <div class="text-4xl grayscale peer-checked:grayscale-0 hover:scale-110 transition-transform">🤩</div>
+                                <div class="text-xs text-center mt-1 font-semibold peer-checked:text-emerald-600">Sangat Paham</div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="reflection" value="cukup_paham" class="peer sr-only">
+                                <div class="text-4xl grayscale peer-checked:grayscale-0 hover:scale-110 transition-transform">🙂</div>
+                                <div class="text-xs text-center mt-1 font-semibold peer-checked:text-blue-600">Cukup Paham</div>
+                            </label>
+                            <label class="cursor-pointer">
+                                <input type="radio" name="reflection" value="kurang_paham" class="peer sr-only">
+                                <div class="text-4xl grayscale peer-checked:grayscale-0 hover:scale-110 transition-transform">🤔</div>
+                                <div class="text-xs text-center mt-1 font-semibold peer-checked:text-yellow-600">Masih Bingung</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center">
+                        <button onclick="showFinalResult()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-8 rounded-lg shadow transition">Lihat Laporan Hasil</button>
+                    </div>
+                </div>
+                
+                <!-- Final Report Card -->
+                <div id="final-report" class="hidden bg-white p-8 rounded-xl shadow-2xl border-t-8 border-emerald-500 transform transition-all duration-500 scale-95 opacity-0">
+                    <div class="text-center mb-6">
+                        <h3 class="text-3xl font-black text-gray-800 uppercase tracking-wider">Laporan Hasil Belajar</h3>
+                        <p class="text-gray-500 text-sm mt-1">Materi: Listrik Statis - Hukum Coulomb</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-6 border-b border-gray-200 pb-6 text-lg">
+                        <div><span class="text-gray-500">Nama:</span> <br><strong id="rep-name" class="text-emerald-800 text-xl">-</strong></div>
+                        <div class="text-right"><span class="text-gray-500">Kelas / Absen:</span> <br><strong id="rep-class" class="text-emerald-800 text-xl">-</strong> / <strong id="rep-absent" class="text-emerald-800 text-xl">-</strong></div>
+                    </div>
+                    
+                    <div class="flex flex-col items-center justify-center mb-6">
+                        <div class="text-gray-600 font-semibold mb-2">Nilai Kuis:</div>
+                        <div class="relative w-32 h-32 rounded-full border-8 flex items-center justify-center" id="score-circle">
+                            <span id="rep-score" class="text-4xl font-black">0</span>
+                        </div>
+                        <p id="rep-message" class="mt-4 font-bold text-lg text-center"></p>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-lg text-sm text-gray-600 text-center">
+                        Refleksi Diri: <strong id="rep-reflection" class="text-gray-800">Belum diisi</strong>
+                    </div>
+                    
+                    <div class="mt-6 text-center">
+                        <button onclick="window.print()" class="text-emerald-600 hover:text-emerald-800 underline"><i class="fas fa-print mr-1"></i>Cetak Laporan</button>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- Audio Effects -->
+    <audio id="audio-celebration" src="https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3" preload="auto"></audio>
+    <audio id="audio-sadness" src="https://assets.mixkit.co/active_storage/sfx/2957/2957-preview.mp3" preload="auto"></audio>
+    <audio id="audio-pop" src="https://assets.mixkit.co/active_storage/sfx/2578/2578-preview.mp3" preload="auto"></audio>
+
+    <script>
+        // --- Navigation Logic ---
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(sec => {
+                sec.classList.add('hidden');
+            });
+            // Remove active class from all nav buttons
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById('sec-' + sectionId).classList.remove('hidden');
+            // Add active class to clicked button
+            document.getElementById('nav-' + sectionId).classList.add('active');
+            
+            // Resize canvas if simulation section is shown
+            if(sectionId === 'simulasi') {
+                resizeCanvas();
+                drawSimulation();
+            }
+        }
+
+        // --- Mission Card Logic ---
+        function unlockMission(card) {
+            // Mainkan suara pop/unlock
+            const popSound = document.getElementById('audio-pop');
+            popSound.currentTime = 0;
+            popSound.play().catch(e => {});
+
+            if (!card.classList.contains('flipped')) {
+                card.classList.add('flipped');
+                const tapIcon = card.querySelector('.tap-icon');
+                if(tapIcon) tapIcon.style.display = 'none';
+                
+                // Efek partikel bintang memancar (JS murni)
+                const rect = card.getBoundingClientRect();
+                for(let i=0; i<8; i++) {
+                    let star = document.createElement('i');
+                    star.className = 'fas fa-star text-yellow-400 absolute pointer-events-none';
+                    // Mulai dari tengah kartu
+                    star.style.left = '50%';
+                    star.style.top = '50%';
+                    star.style.zIndex = '50';
+                    star.style.fontSize = (12 + Math.random()*15) + 'px';
+                    star.style.transition = 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                    card.appendChild(star);
+                    
+                    // Animasi menyebar ke segala arah
+                    setTimeout(() => {
+                        const angle = Math.random() * Math.PI * 2;
+                        const distance = 80 + Math.random() * 60; // radius ledakan
+                        star.style.transform = `translate(-50%, -50%) translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) rotate(${Math.random()*360}deg) scale(0)`;
+                        star.style.opacity = '0';
+                    }, 10);
+                    
+                    // Hapus elemen partikel setelah animasi selesai
+                    setTimeout(() => star.remove(), 600);
+                }
+            } else {
+                card.classList.remove('flipped');
+            }
+        }
+
+        // --- Logic Smart Formula ---
+        function showFormulaInfo(variable) {
+            // Mainkan sound FX kecil
+            document.getElementById('audio-pop').play().catch(e => {});
+
+            // Sembunyikan semua layar info
+            document.getElementById('info-default').classList.add('hidden');
+            document.getElementById('info-q').classList.add('hidden');
+            document.getElementById('info-r').classList.add('hidden');
+
+            // Reset efek glow di tombol
+            document.getElementById('btn-var-q').classList.remove('text-emerald-400', 'drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]');
+            document.getElementById('btn-var-r').classList.remove('text-rose-400', 'drop-shadow-[0_0_10px_rgba(251,113,133,0.8)]');
+
+            // Tampilkan layar yang dipilih dan aktifkan glow
+            if (variable === 'q') {
+                document.getElementById('info-q').classList.remove('hidden');
+                document.getElementById('btn-var-q').classList.add('text-emerald-400', 'drop-shadow-[0_0_10px_rgba(52,211,153,0.8)]');
+            } else if (variable === 'r') {
+                document.getElementById('info-r').classList.remove('hidden');
+                document.getElementById('btn-var-r').classList.add('text-rose-400', 'drop-shadow-[0_0_10px_rgba(251,113,133,0.8)]');
+            }
+        }
+
+        // --- Mini Game Logic (Drag & Drop in Theory) ---
+        let correctDrops = 0;
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+        function dragEnter(ev) {
+            ev.target.classList.add('drag-over');
+        }
+        function dragLeave(ev) {
+            ev.target.classList.remove('drag-over');
+        }
+        function drop(ev) {
+            ev.preventDefault();
+            ev.target.classList.remove('drag-over');
+            var data = ev.dataTransfer.getData("text");
+            var expectedAnswer = ev.target.getAttribute('data-answer');
+            
+            if (data === expectedAnswer) {
+                ev.target.appendChild(document.getElementById(data));
+                ev.target.classList.add('border-green-500', 'bg-green-50');
+                ev.target.removeAttribute('ondrop'); // Disable further drops
+                document.getElementById('audio-pop').play().catch(e => {});
+                correctDrops++;
+                if(correctDrops === 2) {
+                    const fb = document.getElementById('mini-game-feedback');
+                    fb.innerHTML = '✨ Luar Biasa! Kamu sudah paham interaksi muatan. ✨';
+                    fb.classList.remove('hidden');
+                    fb.classList.add('text-emerald-600', 'animate-pulse');
+                }
+            } else {
+                // Wrong drop visual feedback briefly
+                ev.target.classList.add('border-red-500', 'bg-red-50');
+                setTimeout(() => {
+                    ev.target.classList.remove('border-red-500', 'bg-red-50');
+                }, 500);
+            }
+        }
+
+        // --- Simulation Logic (Canvas HTML5) ---
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        let simMode = 'all'; // all, charge_only, dist_only
+
+        const q1Slider = document.getElementById('slider-q1');
+        const q2Slider = document.getElementById('slider-q2');
+        const rSlider = document.getElementById('slider-r');
+        const q1Val = document.getElementById('val-q1');
+        const q2Val = document.getElementById('val-q2');
+        const rVal = document.getElementById('val-r');
+        const hudForce = document.getElementById('hud-force');
+        const hudInteraction = document.getElementById('hud-interaction');
+
+        // Constants for visual representation (not strict physics scaling)
+        const K_visual = 50; 
+        const maxCanvasForce = 1000;
+
+        function resizeCanvas() {
+            // Get parent container width
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+
+        function getSignString(val) {
+            return val > 0 ? '+' : (val < 0 ? '' : '');
+        }
+
+        function calculateForce(q1, q2, r) {
+            if (r === 0) return 0; // Prevent divide by zero in reality, though slider min is 2
+            // F = k * |q1*q2| / r^2
+            // We use arbitrary visual units to make numbers look nice for middle school
+            const f = K_visual * Math.abs(q1 * q2) / (r * r);
+            return f;
+        }
+
+        function drawSimulation() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const q1 = parseInt(q1Slider.value);
+            const q2 = parseInt(q2Slider.value);
+            const r = parseFloat(rSlider.value);
+
+            // Update UI Labels
+            q1Val.innerHTML = `${getSignString(q1)}${q1} &mu;C`;
+            q2Val.innerHTML = `${getSignString(q2)}${q2} &mu;C`;
+            rVal.innerHTML = `${r} cm`;
+
+            const f = calculateForce(q1, q2, r);
+            hudForce.innerHTML = `${f.toFixed(2)} N`;
+
+            // Determine interaction
+            let interaction = 'Netral';
+            let interactionColor = 'text-gray-500';
+            if (q1 === 0 || q2 === 0) {
+                interaction = 'Tidak Ada Gaya';
+                interactionColor = 'text-gray-500';
+            } else if ((q1 > 0 && q2 > 0) || (q1 < 0 && q2 < 0)) {
+                interaction = 'Tolak Menolak';
+                interactionColor = 'text-red-600';
+            } else {
+                interaction = 'Tarik Menarik';
+                interactionColor = 'text-emerald-600';
+            }
+            hudInteraction.className = `absolute top-4 right-4 bg-white/90 px-4 py-2 rounded-full shadow font-bold text-lg pointer-events-none backdrop-blur-sm border border-gray-200 ${interactionColor}`;
+            hudInteraction.innerText = interaction;
+
+            // Drawing logic
+            const centerY = canvas.height / 2;
+            const pixelsPerCm = (canvas.width * 0.6) / 10; // Max 10cm takes 60% of width
+            const rPixels = r * pixelsPerCm;
+            
+            const centerX = canvas.width / 2;
+            const x1 = centerX - (rPixels / 2);
+            const x2 = centerX + (rPixels / 2);
+
+            // Draw Ruler / Distance Line
+            ctx.beginPath();
+            ctx.moveTo(x1, centerY + 60);
+            ctx.lineTo(x2, centerY + 60);
+            ctx.strokeStyle = '#94a3b8'; // slate-400
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            // Ruler ends
+            ctx.beginPath();
+            ctx.moveTo(x1, centerY + 50);
+            ctx.lineTo(x1, centerY + 70);
+            ctx.moveTo(x2, centerY + 50);
+            ctx.lineTo(x2, centerY + 70);
+            ctx.stroke();
+
+            // Ruler text
+            ctx.fillStyle = '#64748b';
+            ctx.font = '14px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText(`r = ${r} cm`, centerX, centerY + 85);
+
+            // Function to draw charge
+            const drawCharge = (x, y, q, isQ1) => {
+                const radius = 20 + Math.abs(q) * 1.5; // Size depends on charge magnitude
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI);
+                
+                if (q > 0) {
+                    // Positive (Red gradient)
+                    const grad = ctx.createRadialGradient(x-radius/3, y-radius/3, radius/10, x, y, radius);
+                    grad.addColorStop(0, '#fca5a5');
+                    grad.addColorStop(1, '#ef4444');
+                    ctx.fillStyle = grad;
+                    ctx.shadowColor = 'rgba(239, 68, 68, 0.5)';
+                } else if (q < 0) {
+                    // Negative (Blue gradient)
+                    const grad = ctx.createRadialGradient(x-radius/3, y-radius/3, radius/10, x, y, radius);
+                    grad.addColorStop(0, '#93c5fd');
+                    grad.addColorStop(1, '#3b82f6');
+                    ctx.fillStyle = grad;
+                    ctx.shadowColor = 'rgba(59, 130, 246, 0.5)';
+                } else {
+                    // Neutral (Gray)
+                    ctx.fillStyle = '#cbd5e1';
+                    ctx.shadowColor = 'transparent';
+                }
+                
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                ctx.shadowBlur = 0; // reset
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.stroke();
+
+                // Draw charge sign
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                if (q > 0) ctx.fillText('+', x, y);
+                else if (q < 0) ctx.fillText('-', x, y);
+
+                // Draw Label q1 or q2
+                ctx.fillStyle = '#334155';
+                ctx.font = '14px Inter';
+                ctx.fillText(isQ1 ? 'q1' : 'q2', x, y - radius - 15);
+            };
+
+            // Draw Force Vectors (Arrows)
+            const drawForceArrow = (startX, y, forceMagnitude, direction, color) => {
+                if (forceMagnitude <= 0.1) return; // Too small to draw
+                
+                // Map force to arrow length (cap max length)
+                let arrowLen = (forceMagnitude / 50) * 100; // Base scaling
+                if (arrowLen > 120) arrowLen = 120 + Math.log(arrowLen-120)*10; // Log scale for large forces to keep on screen
+                
+                const endX = startX + (direction * arrowLen);
+                const headlen = 10;
+                const angle = direction > 0 ? 0 : Math.PI;
+
+                ctx.beginPath();
+                ctx.moveTo(startX, y);
+                ctx.lineTo(endX, y);
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 4;
+                ctx.stroke();
+
+                // Arrow head
+                ctx.beginPath();
+                ctx.moveTo(endX, y);
+                ctx.lineTo(endX - headlen * Math.cos(angle - Math.PI / 6), y - headlen * Math.sin(angle - Math.PI / 6));
+                ctx.lineTo(endX - headlen * Math.cos(angle + Math.PI / 6), y - headlen * Math.sin(angle + Math.PI / 6));
+                ctx.lineTo(endX, y);
+                ctx.fillStyle = color;
+                ctx.fill();
+                
+                // Draw F label
+                ctx.fillStyle = color;
+                ctx.font = 'bold 14px Inter';
+                ctx.fillText('F', startX + (direction * (arrowLen/2)), y - 10);
+            };
+
+            // Calculate arrow directions based on interaction
+            if (q1 !== 0 && q2 !== 0) {
+                const radius1 = 20 + Math.abs(q1) * 1.5;
+                const radius2 = 20 + Math.abs(q2) * 1.5;
+                
+                if (interaction === 'Tolak Menolak') {
+                    drawForceArrow(x1 - radius1 - 5, centerY, f, -1, '#ef4444'); // Left
+                    drawForceArrow(x2 + radius2 + 5, centerY, f, 1, '#ef4444');  // Right
+                } else if (interaction === 'Tarik Menarik') {
+                    drawForceArrow(x1 + radius1 + 5, centerY, f, 1, '#10b981');  // Right towards center
+                    drawForceArrow(x2 - radius2 - 5, centerY, f, -1, '#10b981'); // Left towards center
+                }
+            }
+
+            drawCharge(x1, centerY, q1, true);
+            drawCharge(x2, centerY, q2, false);
+        }
+
+        function setSimMode(mode) {
+            simMode = mode;
+            const btnAll = document.getElementById('btn-mode-all');
+            const btnCharge = document.getElementById('btn-mode-charge');
+            const btnDist = document.getElementById('btn-mode-dist');
+            const desc = document.getElementById('sim-mode-desc');
+            
+            // Reset button styles
+            [btnAll, btnCharge, btnDist].forEach(btn => {
+                btn.className = "px-4 py-2 text-sm font-medium bg-white text-gray-900 border border-gray-200 hover:bg-gray-100";
+            });
+
+            // Re-enable all inputs first
+            q1Slider.disabled = false;
+            q2Slider.disabled = false;
+            rSlider.disabled = false;
+            q1Slider.parentElement.classList.remove('opacity-50');
+            q2Slider.parentElement.classList.remove('opacity-50');
+            rSlider.parentElement.classList.remove('opacity-50');
+
+            if (mode === 'all') {
+                btnAll.className = "px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-emerald-600 rounded-l-lg hover:bg-emerald-700";
+                desc.innerText = "Mode: Anda dapat mengubah nilai muatan dan jarak secara bebas.";
+                btnAll.classList.add('rounded-l-lg'); // fix border radius
+                btnDist.classList.add('rounded-r-md');
+            } else if (mode === 'charge_only') {
+                btnCharge.className = "px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-emerald-600 hover:bg-emerald-700";
+                desc.innerText = "Mode: Fokus pengaruh MUATAN. Jarak (r) dikunci.";
+                rSlider.disabled = true;
+                rSlider.parentElement.classList.add('opacity-50');
+                btnAll.classList.add('rounded-l-lg');
+                btnDist.classList.add('rounded-r-md');
+            } else if (mode === 'dist_only') {
+                btnDist.className = "px-4 py-2 text-sm font-medium text-white bg-emerald-600 border border-emerald-600 rounded-r-md hover:bg-emerald-700";
+                desc.innerText = "Mode: Fokus pengaruh JARAK. Muatan (q1 & q2) dikunci.";
+                q1Slider.disabled = true;
+                q2Slider.disabled = true;
+                q1Slider.parentElement.classList.add('opacity-50');
+                q2Slider.parentElement.classList.add('opacity-50');
+                btnAll.classList.add('rounded-l-lg');
+            }
+        }
+
+        function resetSimulation() {
+            q1Slider.value = 2;
+            q2Slider.value = 2;
+            rSlider.value = 4;
+            setSimMode('all');
+            drawSimulation();
+        }
+
+        // Event Listeners for Simulation
+        q1Slider.addEventListener('input', drawSimulation);
+        q2Slider.addEventListener('input', drawSimulation);
+        rSlider.addEventListener('input', drawSimulation);
+        window.addEventListener('resize', () => {
+            if(!document.getElementById('sec-simulasi').classList.contains('hidden')){
+                resizeCanvas();
+                drawSimulation();
+            }
+        });
+
+        // Initialize simulation on load (even if hidden, to set initial values)
+        resizeCanvas();
+        drawSimulation();
+
+        // --- Quiz Logic ---
+        const quizBank = [
+            // Mudah (PG)
+            { type: 'pg', diff: 'Mudah', q: "Jika dua muatan positif saling didekatkan, maka interaksi yang terjadi adalah...", options: ["Tarik menarik", "Tolak menolak", "Tidak bereaksi", "Kadang tarik, kadang tolak"], a: 1 },
+            { type: 'pg', diff: 'Mudah', q: "Partikel sub-atomik yang bermuatan positif disebut...", options: ["Elektron", "Neutron", "Proton", "Inti atom"], a: 2 },
+            { type: 'pg', diff: 'Mudah', q: "Satuan untuk Gaya Coulomb dalam Sistem Internasional (SI) adalah...", options: ["Joule", "Ampere", "Newton", "Coulomb"], a: 2 },
+            { type: 'pg', diff: 'Mudah', q: "Benda dikatakan netral apabila...", options: ["Jumlah proton > elektron", "Jumlah elektron > proton", "Tidak memiliki proton", "Jumlah proton = elektron"], a: 3 },
+            // Sedang (PG / PG Kompleks)
+            { type: 'pg', diff: 'Sedang', q: "Berdasarkan Hukum Coulomb, jika jarak antara dua muatan diperbesar (dijauhkan), maka gaya Coulomb yang terjadi akan...", options: ["Semakin besar", "Semakin kecil", "Tetap sama", "Menjadi nol"], a: 1 },
+            { type: 'pg', diff: 'Sedang', q: "Nilai konstanta Coulomb (k) di ruang hampa yang sering digunakan dalam perhitungan adalah...", options: ["9 x 10^9 Nm2/C2", "6,67 x 10^-11 Nm2/kg2", "3 x 10^8 m/s", "1,6 x 10^-19 C"], a: 0 },
+            { type: 'pgk', diff: 'Sedang', q: "Manakah pernyataan yang BENAR mengenai faktor yang mempengaruhi Gaya Coulomb? (Pilih 2)", options: ["Besar muatan benda", "Massa benda bermuatan", "Jarak antar muatan", "Kecepatan muatan bergerak"], a: [0, 2] },
+            // Sukar / Perhitungan Dasar
+            { type: 'pg', diff: 'Sukar', q: "Dua muatan masing-masing sebesar +2C dan +3C terpisah pada jarak r. Jika muatan pertama diubah menjadi +4C dan jaraknya tetap, bagaimana besar gaya Coulomb sekarang?", options: ["2 kali semula", "3 kali semula", "4 kali semula", "Setengah kali semula"], a: 0 },
+            { type: 'pg', diff: 'Sukar', q: "Dua buah muatan terpisah sejauh R memiliki gaya Coulomb sebesar F. Jika jarak kedua muatan diubah menjadi 2 kali jarak mula-mula (2R), maka besar gaya Coulomb yang dialami menjadi...", options: ["2 F", "4 F", "1/2 F", "1/4 F"], a: 3 },
+            // HOTS / Analisis
+            { type: 'pg', diff: 'HOTS', q: "Muatan A menolak muatan B tetapi menarik muatan C. Jika diketahui muatan C menolak muatan D yang bermuatan positif, maka jenis muatan A, B, dan C berturut-turut adalah...", options: ["Negatif, Negatif, Positif", "Positif, Positif, Negatif", "Positif, Negatif, Positif", "Negatif, Positif, Negatif"], a: 0 },
+            { type: 'pg', diff: 'HOTS', q: "Sebuah penggaris plastik digosok dengan kain wol sehingga bermuatan negatif. Hal ini terjadi karena...", options: ["Proton pindah dari plastik ke wol", "Elektron pindah dari plastik ke wol", "Elektron pindah dari wol ke plastik", "Proton pindah dari wol ke plastik"], a: 2 },
+            { type: 'pgk', diff: 'HOTS', q: "Fenomena mana saja yang merupakan penerapan atau contoh Listrik Statis dalam kehidupan? (Pilih lebih dari 1)", options: ["Lampu menyala saat saklar ditekan", "Terjadinya petir saat hujan", "Mesin fotokopi", "Setrika listrik yang memanas"], a: [1, 2] },
+            // True/False represented as PG
+            { type: 'pg', diff: 'Sedang', q: "Gaya Coulomb adalah besaran vektor karena memiliki nilai dan arah.", options: ["Benar", "Salah"], a: 0 },
+            { type: 'pg', diff: 'Mudah', q: "Kaca yang digosok kain sutra akan bermuatan positif.", options: ["Benar", "Salah"], a: 0 }
+        ];
+
+        let selectedQuestions = [];
+        let currentQuestionIndex = 0;
+        let userAnswers = [];
+        let score = 0;
+        let quizCompleted = false;
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function startQuiz() {
+            // Select 10 random questions
+            let bankCopy = [...quizBank];
+            shuffleArray(bankCopy);
+            selectedQuestions = bankCopy.slice(0, 10);
+            
+            // Randomize options within each selected PG question
+            selectedQuestions.forEach(q => {
+                if (q.type === 'pg') {
+                    // Create object array to keep track of correct answer index after shuffle
+                    let ops = q.options.map((opt, idx) => ({ text: opt, isCorrect: idx === q.a }));
+                    shuffleArray(ops);
+                    q.shuffledOptions = ops;
+                } else if (q.type === 'pgk') {
+                     let ops = q.options.map((opt, idx) => ({ text: opt, isCorrect: q.a.includes(idx) }));
+                     shuffleArray(ops);
+                     q.shuffledOptions = ops;
+                }
+            });
+
+            currentQuestionIndex = 0;
+            userAnswers = new Array(10).fill(null);
+            score = 0;
+            quizCompleted = false;
+
+            document.getElementById('quiz-intro').classList.add('hidden');
+            document.getElementById('quiz-container').classList.remove('hidden');
+            
+            renderQuestion();
+        }
+
+        function renderQuestion() {
+            const q = selectedQuestions[currentQuestionIndex];
+            document.getElementById('current-q-num').innerText = currentQuestionIndex + 1;
+            document.getElementById('quiz-progress').style.width = `${((currentQuestionIndex) / 10) * 100}%`;
+            
+            // Difficulty Badge Color
+            const diffBadge = document.getElementById('q-difficulty');
+            diffBadge.innerText = q.diff;
+            diffBadge.className = 'text-xs font-bold px-2 py-1 rounded text-white shadow-sm ';
+            if(q.diff === 'Mudah') diffBadge.classList.add('bg-green-500');
+            else if(q.diff === 'Sedang') diffBadge.classList.add('bg-yellow-500');
+            else if(q.diff === 'Sukar') diffBadge.classList.add('bg-orange-500');
+            else if(q.diff === 'HOTS') diffBadge.classList.add('bg-red-600', 'animate-pulse');
+
+            let qTextHtml = q.q;
+            if(q.type === 'pgk') qTextHtml += ' <span class="text-sm font-normal text-gray-500 block mt-1">(Pilih semua jawaban yang benar)</span>';
+            document.getElementById('question-text').innerHTML = qTextHtml;
+
+            const optContainer = document.getElementById('options-container');
+            optContainer.innerHTML = '';
+            document.getElementById('next-btn').classList.add('hidden');
+
+            q.shuffledOptions.forEach((opt, idx) => {
+                const optDiv = document.createElement('div');
+                
+                if (q.type === 'pg') {
+                    optDiv.className = 'p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition option-item';
+                    optDiv.innerHTML = `
+                        <label class="flex items-center cursor-pointer w-full">
+                            <input type="radio" name="q_opt" value="${idx}" class="w-5 h-5 text-emerald-600 mr-3 focus:ring-emerald-500" onchange="optionSelected('pg')">
+                            <span class="text-lg">${opt.text}</span>
+                        </label>
+                    `;
+                    // Restore previous answer if navigating back (not implemented in this flow, but good practice)
+                } else if (q.type === 'pgk') {
+                    optDiv.className = 'p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-emerald-50 hover:border-emerald-300 transition option-item';
+                    optDiv.innerHTML = `
+                        <label class="flex items-center cursor-pointer w-full">
+                            <input type="checkbox" name="q_opt_k" value="${idx}" class="w-5 h-5 text-emerald-600 mr-3 rounded focus:ring-emerald-500" onchange="optionSelected('pgk')">
+                            <span class="text-lg">${opt.text}</span>
+                        </label>
+                    `;
+                }
+                optContainer.appendChild(optDiv);
+            });
+        }
+
+        function optionSelected(type) {
+            document.getElementById('next-btn').classList.remove('hidden');
+            // Highlight selected
+            const items = document.querySelectorAll('.option-item');
+            items.forEach(item => {
+                item.classList.remove('border-emerald-500', 'bg-emerald-50');
+                const input = item.querySelector('input');
+                if(input.checked) {
+                    item.classList.add('border-emerald-500', 'bg-emerald-50');
+                }
+            });
+        }
+
+        function nextQuestion() {
+            // Save answer
+            const q = selectedQuestions[currentQuestionIndex];
+            if (q.type === 'pg') {
+                const selected = document.querySelector('input[name="q_opt"]:checked');
+                if (selected) {
+                    const idx = parseInt(selected.value);
+                    userAnswers[currentQuestionIndex] = q.shuffledOptions[idx].isCorrect;
+                }
+            } else if (q.type === 'pgk') {
+                const checkedBoxes = document.querySelectorAll('input[name="q_opt_k"]:checked');
+                let allCorrectChecked = true;
+                let anyWrongChecked = false;
+                let numChecked = 0;
+
+                checkedBoxes.forEach(box => {
+                    numChecked++;
+                    const idx = parseInt(box.value);
+                    if (q.shuffledOptions[idx].isCorrect) {
+                        // Good
+                    } else {
+                        anyWrongChecked = true;
+                    }
+                });
+                
+                // Count how many correct options exist
+                let totalCorrectOptions = q.shuffledOptions.filter(o => o.isCorrect).length;
+                
+                if (numChecked > 0 && numChecked === totalCorrectOptions && !anyWrongChecked) {
+                    userAnswers[currentQuestionIndex] = true;
+                } else {
+                    userAnswers[currentQuestionIndex] = false; // Partial marks not implemented for simplicity
+                }
+            }
+
+            currentQuestionIndex++;
+
+            if (currentQuestionIndex < selectedQuestions.length) {
+                renderQuestion();
+            } else {
+                finishQuiz();
+            }
+        }
+
+        function finishQuiz() {
+            quizCompleted = true;
+            document.getElementById('quiz-progress').style.width = `100%`;
+            
+            // Calculate score
+            let correctCount = userAnswers.filter(ans => ans === true).length;
+            score = (correctCount / 10) * 100;
+
+            // Trigger Animation based on requirement (>3 correct = happy, else sad)
+            if (correctCount > 3) {
+                triggerCelebration();
+            } else {
+                triggerSadness();
+            }
+
+            // Update UI
+            document.getElementById('quiz-container').innerHTML = `
+                <div class="text-center py-10">
+                    <i class="fas fa-flag-checkered text-5xl text-emerald-500 mb-4"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Kuis Selesai!</h2>
+                    <p class="text-gray-600 mb-6">Jawabanmu telah direkam. Silakan menuju tab <strong>Kesimpulan</strong> untuk melihat nilaimu.</p>
+                    <button onclick="showSection('kesimpulan')" class="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-full">Pergi ke Kesimpulan</button>
+                </div>
+            `;
+        }
+
+        function triggerCelebration() {
+            const cel = document.getElementById('celebration-anim');
+            const audio = document.getElementById('audio-celebration');
+            cel.style.display = 'block';
+            audio.play().catch(e => console.log("Audio play prevented"));
+            
+            // Floating emojis
+            for(let i=0; i<15; i++) {
+                setTimeout(() => {
+                    let em = document.createElement('div');
+                    em.className = 'floating-emoji';
+                    em.innerText = ['⭐', '🎉', '👏', '💯', '🚀'][Math.floor(Math.random()*5)];
+                    em.style.left = (Math.random() * 100) + 'vw';
+                    em.style.top = (50 + Math.random() * 50) + 'vh';
+                    document.body.appendChild(em);
+                    setTimeout(() => em.remove(), 2000);
+                }, i * 100);
+            }
+
+            setTimeout(() => {
+                cel.style.display = 'none';
+            }, 3000);
+        }
+
+        function triggerSadness() {
+            const sad = document.getElementById('sadness-anim');
+            const audio = document.getElementById('audio-sadness');
+            sad.style.display = 'block';
+            audio.play().catch(e => console.log("Audio play prevented"));
+            setTimeout(() => {
+                sad.style.display = 'none';
+            }, 3000);
+        }
+
+        function showFinalResult() {
+            const name = document.getElementById('student-name').value;
+            const cls = document.getElementById('student-class').value;
+            const abs = document.getElementById('student-absent').value;
+            const refEl = document.querySelector('input[name="reflection"]:checked');
+
+            if (!name || !cls || !abs || !refEl) {
+                alert("Harap lengkapi Nama, Kelas, No. Absen, dan Refleksi terlebih dahulu!");
+                return;
+            }
+
+            // Populate Report Card
+            document.getElementById('rep-name').innerText = name;
+            document.getElementById('rep-class').innerText = cls;
+            document.getElementById('rep-absent').innerText = abs;
+            
+            let refText = "";
+            if(refEl.value === 'sangat_paham') refText = "🤩 Sangat Paham, materi menyenangkan!";
+            else if(refEl.value === 'cukup_paham') refText = "🙂 Cukup Paham, tapi butuh latihan lagi.";
+            else refText = "🤔 Masih Bingung, saya butuh penjelasan ulang guru.";
+            document.getElementById('rep-reflection').innerText = refText;
+
+            const scoreDisplay = document.getElementById('rep-score');
+            const scoreCircle = document.getElementById('score-circle');
+            const msg = document.getElementById('rep-message');
+
+            if (quizCompleted) {
+                scoreDisplay.innerText = score;
+                // Color code score
+                if (score >= 80) {
+                    scoreCircle.className = "relative w-32 h-32 rounded-full border-8 border-green-500 flex items-center justify-center text-green-600 bg-green-50";
+                    msg.innerText = "Luar Biasa! Pemahamanmu sangat baik.";
+                    msg.className = "mt-4 font-bold text-lg text-center text-green-600";
+                } else if (score >= 60) {
+                    scoreCircle.className = "relative w-32 h-32 rounded-full border-8 border-yellow-400 flex items-center justify-center text-yellow-600 bg-yellow-50";
+                    msg.innerText = "Bagus! Terus tingkatkan belajarmu.";
+                    msg.className = "mt-4 font-bold text-lg text-center text-yellow-600";
+                } else {
+                    scoreCircle.className = "relative w-32 h-32 rounded-full border-8 border-red-500 flex items-center justify-center text-red-600 bg-red-50";
+                    msg.innerText = "Jangan menyerah, ayo baca materinya lagi!";
+                    msg.className = "mt-4 font-bold text-lg text-center text-red-600";
+                }
+            } else {
+                scoreDisplay.innerText = "-";
+                scoreCircle.className = "relative w-32 h-32 rounded-full border-8 border-gray-300 flex items-center justify-center text-gray-500 bg-gray-50";
+                msg.innerText = "Kamu belum menyelesaikan Kuis.";
+                msg.className = "mt-4 font-bold text-lg text-center text-gray-500";
+            }
+
+            // Animate show
+            const report = document.getElementById('final-report');
+            const formArea = document.getElementById('result-form-area');
+            
+            formArea.style.opacity = '0.5';
+            formArea.style.pointerEvents = 'none';
+
+            report.classList.remove('hidden');
+            setTimeout(() => {
+                report.classList.remove('scale-95', 'opacity-0');
+                report.classList.add('scale-100', 'opacity-100');
+                report.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 50);
+        }
+
+    </script>
+</body>
+</html>
